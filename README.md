@@ -50,7 +50,7 @@ OpenGovtBD connects citizens, government officers, and administrators on a singl
 - **Lucide React** — icon set
 - **Sonner** — toast notifications
 
-> This is currently a front-end prototype with in-memory mock data (no backend/database yet). Refreshing the page resets state.
+> This is currently a front-end prototype with in-memory mock data (no backend/database yet). Refreshing the page resets state
 
 ---
 
