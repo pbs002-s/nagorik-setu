@@ -109,3 +109,8 @@ src/
 ## 📜 License
 
 Private prototype project — not for public distribution.
+
+## 👥 Collaborators
+
+- [Pronob Das](https://github.com/Pronob155)
+- [Pritam Biswas](https://github.com/pbs002-s)
