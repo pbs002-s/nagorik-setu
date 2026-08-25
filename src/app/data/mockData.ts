@@ -376,15 +376,23 @@ export interface Comment {
   time: string;
 }
 
+export type ComplaintPriority = "low" | "medium" | "high" | "urgent";
+
 export interface Complaint {
   id: string;
   title: string;
   category: string;
   location: string;
   district: string;
+  upazila?: string;
   date: string;
   status: ComplaintStatus;
+  priority?: ComplaintPriority;
   description: string;
+  citizenId?: string;
+  citizenName?: string;
+  assignedOfficer?: string;
+  photos?: string[];
   timeline: TimelineEntry[];
   officerNotes: { officer: string; note: string; time: string }[];
   comments: Comment[];
@@ -399,6 +407,7 @@ export interface Poll {
   closesIn: string;
   closed: boolean;
   votedOption: string | null;
+  addedByOfficer?: boolean;
 }
 
 export interface Badge {
@@ -423,11 +432,46 @@ export interface LeaderboardEntry {
 
 export interface Notification {
   id: string;
-  type: "complaint" | "poll" | "badge";
+  type: "complaint" | "poll" | "badge" | "system";
   title: string;
   body: string;
   time: string;
   read: boolean;
+  link?: string;
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  actor: string;
+  role: string;
+  details: string;
+  timestamp: string;
+  ip?: string;
+  status: "success" | "warning" | "info";
+}
+
+export interface EmergencyHelpline {
+  number: string;
+  nameEn: string;
+  nameBn: string;
+  category: string;
+  descEn: string;
+  descBn: string;
+  tollFree: boolean;
+  icon: string;
+}
+
+export interface DivisionStat {
+  id: string;
+  nameEn: string;
+  nameBn: string;
+  districtsCount: number;
+  activeComplaints: number;
+  resolvedComplaints: number;
+  resolutionRate: number;
+  civicHealthScore: number;
+  topCategory: string;
 }
 
 // ─── COMPLAINTS ───────────────────────────────────────────────────────────────
@@ -739,3 +783,71 @@ export const ADMIN_OFFICERS = [
   { name: "Monira Begum", department: "DNCC Waste", assigned: 52, resolved: 38, avgDays: 4.2, rating: 68 },
   { name: "Rezaul Karim", department: "DCC Drainage", assigned: 22, resolved: 18, avgDays: 5.1, rating: 61 },
 ];
+
+// ─── AUDIT LOGS ───────────────────────────────────────────────────────────────
+export const AUDIT_LOGS: AuditLog[] = [
+  { id: "log-1", action: "STATUS_UPDATE", actor: "Abdul Karim (Officer)", role: "officer", details: "Changed status of BGD-2024-0847 to In Progress", timestamp: "10 mins ago", ip: "103.14.24.11", status: "info" },
+  { id: "log-2", action: "POLL_PUBLISH", actor: "Nasrin Akter (Officer)", role: "officer", details: "Published civic poll on Gulshan-2 pedestrian redesign", timestamp: "1 hour ago", ip: "103.14.24.89", status: "success" },
+  { id: "log-3", action: "USER_STATUS_CHANGE", actor: "Super Admin", role: "superadmin", details: "Suspended user u7 (Mahmud Hasan) for spam content", timestamp: "3 hours ago", ip: "182.160.119.5", status: "warning" },
+  { id: "log-4", action: "SERVICE_ADDITION", actor: "Shafiqul Islam (Officer)", role: "officer", details: "Added new E-Service: Water Supply New Connection Portal", timestamp: "5 hours ago", ip: "103.14.24.12", status: "success" },
+  { id: "log-5", action: "EMERGENCY_ALERT", actor: "Super Admin", role: "superadmin", details: "Issued Cyclone Alert #04 for Coastal Divisions", timestamp: "1 day ago", ip: "182.160.119.5", status: "warning" },
+  { id: "log-6", action: "DISCUSSION_APPROVE", actor: "Abdul Karim (Officer)", role: "officer", details: "Approved discussion topic: Mirpur-10 flyover safety", timestamp: "1 day ago", ip: "103.14.24.11", status: "info" },
+];
+
+// ─── EMERGENCY HELPLINES ───────────────────────────────────────────────────────
+export const EMERGENCY_HELPLINES: EmergencyHelpline[] = [
+  { number: "999", nameEn: "National Emergency Service", nameBn: "জাতীয় জরুরি সেবা", category: "Police / Fire / Ambulance", descEn: "Toll-free emergency response for police, fire service, and medical ambulance.", descBn: "পুলিশ, ফায়ার সার্ভিস ও অ্যাম্বুলেন্স সংক্রান্ত জরুরি সহায়তা।", tollFree: true, icon: "ShieldAlert" },
+  { number: "333", nameEn: "National Citizens Information Hotline", nameBn: "জাতীয় নাগরিক তথ্য সেবা", category: "Govt Info & Social Aid", descEn: "Information on government services, social assistance, and relief.", descBn: "সরকারি সেবা ও সামাজিক সমস্যার সমাধানের তথ্য কল সেন্টার।", tollFree: true, icon: "PhoneCall" },
+  { number: "109", nameEn: "Women & Children Helpline", nameBn: "নারী ও শিশু নির্যাতন প্রতিরোধ", category: "Protection & Safety", descEn: "Immediate legal, medical, and shelter support against violence.", descBn: "নারী ও শিশু নির্যাতন প্রতিরোধে সার্বক্ষণিক জাতীয় হেল্পলাইন।", tollFree: true, icon: "HeartHandshake" },
+  { number: "106", nameEn: "Anti-Corruption Commission (ACC)", nameBn: "দুদক অভিযোগ কেন্দ্র", category: "Governance & Anti-Corruption", descEn: "Report bribery, extortion, and corruption in public offices.", descBn: "সরকারি দপ্তরের দুর্নীতি ও ঘুষের বিরুদ্ধে সরাসরি অভিযোগ জানান।", tollFree: true, icon: "Shield" },
+  { number: "16122", nameEn: "Land Services Hotline", nameBn: "ভূমি সেবা হটলাইন", category: "Land & Property", descEn: "Citizen queries regarding Khatian, Mutation, and Land Development Tax.", descBn: "খতিয়ান, নামজারি ও ভূমি উন্নয়ন কর সংক্রান্ত সেবা ও সহায়তা।", tollFree: true, icon: "Landmark" },
+  { number: "1098", nameEn: "Child Protection Helpline", nameBn: "শিশু সহায়তা হেল্পলাইন", category: "Child Welfare", descEn: "Dedicated 24/7 hotline to rescue and support vulnerable children.", descBn: "বিপদাপন্ন শিশুদের জরুরি উদ্ধার ও আইনি সুরক্ষা নিশ্চিত করতে।", tollFree: true, icon: "Baby" },
+  { number: "16263", nameEn: "Shastho Batayon (Health Line)", nameBn: "স্বাস্থ্য বাতায়ন", category: "Healthcare", descEn: "24-hour tele-medicine doctor consultation and health queries.", descBn: "২৪ ঘণ্টা সরকারি অভিজ্ঞ চিকিৎসকদের স্বাস্থ্য পরামর্শ সেবা।", tollFree: true, icon: "Stethoscope" },
+  { number: "16430", nameEn: "National Legal Aid Helpline", nameBn: "জাতীয় আইনগত সহায়তা", category: "Legal Support", descEn: "Free government legal assistance for underprivileged citizens.", descBn: "অসহায় ও দরিদ্র নাগরিকদের বিনামূল্যে সরকারি আইনি সহায়তা।", tollFree: true, icon: "Scale" },
+];
+
+// ─── BANGLADESH DIVISIONS ──────────────────────────────────────────────────────
+export const BANGLADESH_DIVISIONS: DivisionStat[] = [
+  { id: "dhaka", nameEn: "Dhaka", nameBn: "ঢাকা", districtsCount: 13, activeComplaints: 342, resolvedComplaints: 1240, resolutionRate: 78.4, civicHealthScore: 84, topCategory: "Roads & Infrastructure" },
+  { id: "chattogram", nameEn: "Chattogram", nameBn: "চট্টগ্রাম", districtsCount: 11, activeComplaints: 215, resolvedComplaints: 890, resolutionRate: 80.5, civicHealthScore: 86, topCategory: "Drainage & Waterlogging" },
+  { id: "rajshahi", nameEn: "Rajshahi", nameBn: "রাজশাহী", districtsCount: 8, activeComplaints: 120, resolvedComplaints: 540, resolutionRate: 81.8, civicHealthScore: 88, topCategory: "Electricity & Lighting" },
+  { id: "khulna", nameEn: "Khulna", nameBn: "খুলনা", districtsCount: 10, activeComplaints: 145, resolvedComplaints: 610, resolutionRate: 80.7, civicHealthScore: 85, topCategory: "Water Supply" },
+  { id: "sylhet", nameEn: "Sylhet", nameBn: "সিলেট", districtsCount: 4, activeComplaints: 98, resolvedComplaints: 480, resolutionRate: 83.0, civicHealthScore: 89, topCategory: "Roads & Infrastructure" },
+  { id: "barishal", nameEn: "Barishal", nameBn: "বরিশাল", districtsCount: 6, activeComplaints: 88, resolvedComplaints: 390, resolutionRate: 81.5, civicHealthScore: 83, topCategory: "Environment & Noise" },
+  { id: "rangpur", nameEn: "Rangpur", nameBn: "রংপুর", districtsCount: 8, activeComplaints: 112, resolvedComplaints: 450, resolutionRate: 80.1, civicHealthScore: 82, topCategory: "Electricity & Lighting" },
+  { id: "mymensingh", nameEn: "Mymensingh", nameBn: "ময়মনসিংহ", districtsCount: 4, activeComplaints: 74, resolvedComplaints: 320, resolutionRate: 81.2, civicHealthScore: 84, topCategory: "Waste Management" },
+];
+
+// ─── UPAZILAS / THANAS BY DISTRICT ─────────────────────────────────────────────
+export const UPAZILAS_BY_DISTRICT: Record<string, string[]> = {
+  Dhaka: ["Mirpur", "Dhanmondi", "Gulshan", "Uttara", "Mohammadpur", "Motijheel", "Savar", "Dhamrai", "Keraniganj"],
+  Chittagong: ["Panchlaish", "Kotwali", "Khulshi", "Halishahar", "Pahartali", "Sitakunda", "Hathazari", "Patiya"],
+  Rajshahi: ["Boalia", "Rajpara", "Motihar", "Shah Makhdum", "Paba", "Godagari", "Tanore", "Bagmara"],
+  Khulna: ["Khulna Sadar", "Sonadanga", "Khalishpur", "Daulatpur", "Khan Jahan Ali", "Rupsha", "Dumuria"],
+  Sylhet: ["Sylhet Sadar", "Beanibazar", "Golapganj", "Zakiganj", "Kanaighat", "Fenchuganj", "Balaganj"],
+  Barisal: ["Barisal Sadar", "Bakerganj", "Babuganj", "Wazirpur", "Banaripara", "Gournadi", "Muladi"],
+  Rangpur: ["Rangpur Sadar", "Pirgachha", "Mithapukur", "Badarganj", "Gangachhara", "Taraganj", "Kaunia"],
+  Mymensingh: ["Mymensingh Sadar", "Muktagachha", "Trishal", "Bhaluka", "Fulbaria", "Gafargaon", "Ishwarganj"],
+  Comilla: ["Comilla Sadar", "Laksam", "Debidwar", "Burichang", "Chandina", "Chauddagram", "Muradnagar"],
+};
+
+// ─── E-SERVICE CALCULATOR METADATA ─────────────────────────────────────────────
+export const PASSPORT_FEES = {
+  pages48: {
+    years5: { regular: 4025, express: 6325, superExpress: 8625 },
+    years10: { regular: 5750, express: 8050, superExpress: 10350 },
+  },
+  pages64: {
+    years5: { regular: 6325, express: 8625, superExpress: 12075 },
+    years10: { regular: 8050, express: 10350, superExpress: 13800 },
+  },
+};
+
+export const NID_FEES = {
+  correctionNormal: 230,
+  correctionUrgent: 345,
+  reissueNormal: 230,
+  reissueUrgent: 345,
+  reissueLost: 575,
+};
+

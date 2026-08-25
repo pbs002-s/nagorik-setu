@@ -1,38 +1,61 @@
 import { useState } from "react";
-import { Camera, Save, Eye, EyeOff, Check } from "lucide-react";
+import { Camera, Save, Eye, EyeOff, Check, RotateCcw, Shield, Sparkles, UserCheck } from "lucide-react";
 import * as Switch from "@radix-ui/react-switch";
 import { useAuth, type Role } from "../components/AuthContext";
+import { useData } from "../components/DataContext";
+import { NagorikSmartCard } from "../components/NagorikSmartCard";
 import { toast } from "sonner";
 
 const DISTRICTS = [
-  "Dhaka", "Chittagong", "Rajshahi", "Khulna", "Sylhet",
-  "Barisal", "Mymensingh", "Rangpur", "Comilla",
+  "Dhaka",
+  "Chittagong",
+  "Rajshahi",
+  "Khulna",
+  "Sylhet",
+  "Barisal",
+  "Mymensingh",
+  "Rangpur",
+  "Comilla",
 ];
 
-function SectionCard({ title, titleBn, children }: {
-  title: string; titleBn: string; children: React.ReactNode;
+function SectionCard({
+  title,
+  titleBn,
+  children,
+}: {
+  title: string;
+  titleBn: string;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white border border-[#e2e8f0] rounded-2xl overflow-hidden">
-      <div className="px-5 py-4 border-b border-[#e2e8f0]">
-        <div className="font-semibold text-sm">{title}</div>
-        <div className="text-[10px] text-[#64748b]" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
+    <div className="bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+      <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+        <div className="font-bold text-sm text-slate-900 dark:text-white">{title}</div>
+        <div className="text-[11px] text-[#64748b]" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
           {titleBn}
         </div>
       </div>
-      <div className="p-5">{children}</div>
+      <div className="p-6 space-y-4">{children}</div>
     </div>
   );
 }
 
-function ToggleRow({ label, description, checked, onCheckedChange }: {
-  label: string; description: string; checked: boolean; onCheckedChange: (v: boolean) => void;
+function ToggleRow({
+  label,
+  description,
+  checked,
+  onCheckedChange,
+}: {
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[#f1f5f9] last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-slate-100 dark:border-slate-800 last:border-0">
       <div>
-        <div className="text-sm font-medium">{label}</div>
-        <div className="text-xs text-[#64748b]">{description}</div>
+        <div className="text-xs font-bold text-slate-800 dark:text-slate-200">{label}</div>
+        <div className="text-[11px] text-slate-500">{description}</div>
       </div>
       <Switch.Root
         checked={checked}
@@ -49,33 +72,39 @@ function ToggleRow({ label, description, checked, onCheckedChange }: {
   );
 }
 
-function FormField({ label, value, onChange, type = "text" }: {
-  label: string; value: string; onChange: (v: string) => void; type?: string;
+function FormField({
+  label,
+  value,
+  onChange,
+  type = "text",
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  type?: string;
 }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-wider mb-1.5">
-        {label}
-      </label>
+      <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5">{label}</label>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full px-4 py-2.5 text-sm border border-[#e2e8f0] rounded-xl outline-none focus:border-[#059669] transition-colors bg-white"
+        className="w-full px-4 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl outline-none focus:border-emerald-500 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 transition-colors"
       />
     </div>
   );
 }
 
 export function ProfilePage() {
-  const { userName, setUserName, role, setRole } = useAuth();
+  const { userName, setUserName, role, setRole, userId, language, setLanguage } = useAuth();
+  const { civicPoints, resetAllData } = useData();
 
   const [name, setName] = useState(userName);
-  const [email, setEmail] = useState("demo@opengov.bd");
+  const [email, setEmail] = useState("pritam.nagorik@gov.bd");
   const [phone, setPhone] = useState("+880 1700-000000");
-  const [nid, setNid] = useState("1234567890123");
+  const [nid, setNid] = useState("19942691234567890");
   const [district, setDistrict] = useState("Dhaka");
-  const [lang, setLang] = useState<"en" | "bn">("en");
 
   const [notifs, setNotifs] = useState({
     email: true,
@@ -90,7 +119,7 @@ export function ProfilePage() {
 
   const handleSaveProfile = () => {
     setUserName(name);
-    toast.success("Profile updated successfully.");
+    toast.success("Profile details updated successfully.");
   };
 
   const handleSavePassword = () => {
@@ -102,203 +131,178 @@ export function ProfilePage() {
       toast.error("Password must be at least 6 characters.");
       return;
     }
-    toast.success("Password changed successfully.");
+    toast.success("Security password updated.");
     setPwForm({ current: "", next: "", confirm: "" });
   };
 
-  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-
   return (
-    <div className="p-6 max-w-3xl mx-auto space-y-6">
+    <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div>
-        <h1 className="text-xl font-bold text-[#0f172a]">Profile & Settings</h1>
+        <h1 className="text-2xl font-bold text-[#0f172a] dark:text-white">Profile & Civic Identity</h1>
         <p className="text-sm text-[#64748b]" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
-          প্রোফাইল ও সেটিংস
+          ডিজিটাল নাগরিক পরিচয়পত্র, নিরাপত্তা ও ব্যক্তিগত সেটিংস
         </p>
       </div>
 
-      {/* Avatar */}
-      <SectionCard title="Profile Photo" titleBn="প্রোফাইল ছবি">
-        <div className="flex items-center gap-5">
-          <div className="relative">
-            <div
-              className="w-16 h-16 rounded-full flex items-center justify-center text-white text-xl font-bold"
-              style={{ background: "#0f172a" }}
-            >
-              {initials}
-            </div>
-            <button
-              className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-[#059669] border-2 border-white flex items-center justify-center"
-              title="Upload photo"
-            >
-              <Camera size={11} className="text-white" />
-            </button>
-          </div>
+      {/* ════ DIGITAL SMART CARD FEATURE ════ */}
+      <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl space-y-6 border border-emerald-500/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/10">
           <div>
-            <div className="text-sm font-semibold">{name}</div>
-            <div
-              className="text-xs rounded-full px-2.5 py-0.5 font-semibold inline-block mt-1"
-              style={{ background: role === "officer" ? "#1d4ed8" : role === "superadmin" ? "#7c3aed" : "#059669", color: "#fff" }}
-            >
-              {role === "officer" ? "Govt. Officer" : role === "superadmin" ? "Super Admin" : "Verified Citizen"}
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">
+                Official Digital Citizen Pass
+              </span>
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                Verified
+              </span>
             </div>
-            <div className="text-xs text-[#64748b] mt-1">Member since March 2024</div>
+            <h2 className="text-lg font-bold mt-0.5">National Smart Nagorik Card (স্মার্ট পরিচয়পত্র)</h2>
           </div>
+          <div className="text-xs font-mono text-emerald-400">ID: {userId}</div>
         </div>
-      </SectionCard>
 
-      {/* Personal info */}
-      <SectionCard title="Personal Information" titleBn="ব্যক্তিগত তথ্য">
-        <div className="grid md:grid-cols-2 gap-4 mb-5">
-          <FormField label="Full Name" value={name} onChange={setName} />
-          <FormField label="Email Address" value={email} onChange={setEmail} type="email" />
-          <FormField label="Phone Number" value={phone} onChange={setPhone} />
-          <FormField label="National ID (NID)" value={nid} onChange={setNid} />
-          <div>
-            <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-wider mb-1.5">
-              District
-            </label>
-            <select
-              value={district}
-              onChange={(e) => setDistrict(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm border border-[#e2e8f0] rounded-xl outline-none focus:border-[#059669] transition-colors bg-white"
-            >
-              {DISTRICTS.map((d) => <option key={d}>{d}</option>)}
-            </select>
-          </div>
-        </div>
-        <button
-          onClick={handleSaveProfile}
-          className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl text-white font-semibold bg-[#059669] hover:bg-[#047857] transition-colors"
-        >
-          <Save size={14} /> Save Changes
-        </button>
-      </SectionCard>
+        <NagorikSmartCard
+          userName={name}
+          userId={userId}
+          district={district}
+          points={civicPoints}
+          role={role}
+          nid={nid}
+        />
+      </div>
 
-      {/* Language */}
-      <SectionCard title="Language" titleBn="ভাষা">
-        <div className="flex gap-3">
-          {([["en", "English"], ["bn", "বাংলা"]] as const).map(([value, label]) => (
+      {/* ════ DEMO ROLE SWITCHER & DATA RESET ════ */}
+      <SectionCard title="Testing & Demo Role Switcher" titleBn="ডেমো ভূমিকা পরিবর্তন ও ডেটা রিসেট">
+        <p className="text-xs text-slate-500">
+          Easily test the platform from the perspective of a Citizen, Government Officer, or Super Administrator.
+        </p>
+        <div className="grid grid-cols-3 gap-3">
+          {[
+            { r: "citizen" as Role, label: "Citizen Dashboard", color: "#059669" },
+            { r: "officer" as Role, label: "Officer Workspace", color: "#1d4ed8" },
+            { r: "superadmin" as Role, label: "Super Admin Panel", color: "#7c3aed" },
+          ].map((item) => (
             <button
-              key={value}
-              onClick={() => setLang(value)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200"
+              key={item.r}
+              onClick={() => {
+                setRole(item.r);
+                toast.success(`Role switched to ${item.label}`);
+              }}
+              className="p-3.5 rounded-2xl border text-center font-bold text-xs transition-all flex flex-col items-center gap-1"
               style={{
-                background: lang === value ? "#ecfdf5" : "#fff",
-                borderColor: lang === value ? "#059669" : "#e2e8f0",
-                color: lang === value ? "#059669" : "#64748b",
+                borderColor: role === item.r ? item.color : "#e2e8f0",
+                background: role === item.r ? `${item.color}15` : "transparent",
+                color: role === item.r ? item.color : "#64748b",
               }}
             >
-              {lang === value && <Check size={13} />}
-              {label}
+              <UserCheck size={16} />
+              <span>{item.label}</span>
+              {role === item.r && <span className="text-[9px] font-bold">Active Role ✓</span>}
             </button>
           ))}
         </div>
-        <p className="text-xs text-[#94a3b8] mt-3">
-          Language preference applies to the entire platform interface.
-        </p>
+
+        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Reset Demo Data</div>
+            <div className="text-[11px] text-slate-500">Restore all complaints, discussions, and polls to initial seed state</div>
+          </div>
+          <button
+            onClick={resetAllData}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-red-50 hover:text-red-600 border border-slate-200 dark:border-slate-700 transition-colors"
+          >
+            <RotateCcw size={13} />
+            Reset All Data
+          </button>
+        </div>
       </SectionCard>
 
-      {/* Notifications */}
-      <SectionCard title="Notification Preferences" titleBn="বিজ্ঞপ্তি পছন্দ">
+      {/* ════ PERSONAL DETAILS ════ */}
+      <SectionCard title="Personal Information" titleBn="ব্যক্তিগত তথ্য">
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FormField label="Full Name" value={name} onChange={setName} />
+          <FormField label="Email Address" value={email} onChange={setEmail} type="email" />
+          <FormField label="Registered Mobile" value={phone} onChange={setPhone} />
+          <FormField label="National ID (NID) Number" value={nid} onChange={setNid} />
+        </div>
+
+        <div>
+          <label className="block text-xs font-bold text-[#64748b] uppercase tracking-wider mb-1.5">Home District</label>
+          <select
+            value={district}
+            onChange={(e) => setDistrict(e.target.value)}
+            className="w-full px-4 py-2.5 text-xs border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-slate-100 outline-none focus:border-emerald-500"
+          >
+            {DISTRICTS.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <button
+            onClick={handleSaveProfile}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#059669] hover:bg-[#047857] text-white text-xs font-bold transition-all shadow-sm"
+          >
+            <Save size={14} /> Save Profile Changes
+          </button>
+        </div>
+      </SectionCard>
+
+      {/* ════ NOTIFICATION PREFERENCES ════ */}
+      <SectionCard title="Notifications & Alert Channels" titleBn="বিজ্ঞপ্তি ও সতর্কতা পছন্দসমূহ">
         <ToggleRow
-          label="Email Alerts"
-          description="Receive complaint updates by email"
-          checked={notifs.email}
-          onCheckedChange={(v) => setNotifs((n) => ({ ...n, email: v }))}
-        />
-        <ToggleRow
-          label="SMS Alerts"
-          description="Receive complaint updates by SMS"
-          checked={notifs.sms}
-          onCheckedChange={(v) => setNotifs((n) => ({ ...n, sms: v }))}
-        />
-        <ToggleRow
-          label="In-App Notifications"
-          description="Show notifications inside the platform"
+          label="In-App Push Alerts"
+          description="Instant notification on complaint progress and officer notes"
           checked={notifs.inApp}
           onCheckedChange={(v) => setNotifs((n) => ({ ...n, inApp: v }))}
         />
         <ToggleRow
-          label="Poll Reminders"
-          description="Notify when new polls open in your area"
-          checked={notifs.pollReminders}
-          onCheckedChange={(v) => setNotifs((n) => ({ ...n, pollReminders: v }))}
+          label="Email Status Updates"
+          description="Weekly summary of municipal actions in your area"
+          checked={notifs.email}
+          onCheckedChange={(v) => setNotifs((n) => ({ ...n, email: v }))}
         />
         <ToggleRow
-          label="Badge & Achievement Alerts"
-          description="Notify when you earn a new badge"
-          checked={notifs.badgeAlerts}
-          onCheckedChange={(v) => setNotifs((n) => ({ ...n, badgeAlerts: v }))}
+          label="SMS Emergency Bulletins"
+          description="Critical weather & cyclone alerts on your registered phone"
+          checked={notifs.sms}
+          onCheckedChange={(v) => setNotifs((n) => ({ ...n, sms: v }))}
         />
       </SectionCard>
 
-      {/* Change password */}
-      <SectionCard title="Change Password" titleBn="পাসওয়ার্ড পরিবর্তন">
-        <div className="space-y-4 mb-5">
-          {[
-            { label: "Current Password", key: "current" },
-            { label: "New Password", key: "next" },
-            { label: "Confirm New Password", key: "confirm" },
-          ].map(({ label, key }) => (
-            <div key={key} className="relative">
-              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-wider mb-1.5">
-                {label}
-              </label>
-              <input
-                type={showPw ? "text" : "password"}
-                value={pwForm[key as keyof typeof pwForm]}
-                onChange={(e) =>
-                  setPwForm((f) => ({ ...f, [key]: e.target.value }))
-                }
-                className="w-full px-4 py-2.5 pr-10 text-sm border border-[#e2e8f0] rounded-xl outline-none focus:border-[#059669] transition-colors"
-              />
-            </div>
-          ))}
+      {/* ════ PASSWORD CHANGE ════ */}
+      <SectionCard title="Security & Password" titleBn="নিরাপত্তা ও পাসওয়ার্ড">
+        <div className="grid sm:grid-cols-3 gap-4">
+          <FormField
+            label="Current Password"
+            value={pwForm.current}
+            onChange={(v) => setPwForm((p) => ({ ...p, current: v }))}
+            type="password"
+          />
+          <FormField
+            label="New Password"
+            value={pwForm.next}
+            onChange={(v) => setPwForm((p) => ({ ...p, next: v }))}
+            type="password"
+          />
+          <FormField
+            label="Confirm Password"
+            value={pwForm.confirm}
+            onChange={(v) => setPwForm((p) => ({ ...p, confirm: v }))}
+            type="password"
+          />
+        </div>
+        <div className="pt-2 flex justify-end">
           <button
-            type="button"
-            onClick={() => setShowPw(!showPw)}
-            className="flex items-center gap-1.5 text-xs text-[#64748b] hover:text-[#0f172a] transition-colors"
+            onClick={handleSavePassword}
+            className="px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors"
           >
-            {showPw ? <EyeOff size={12} /> : <Eye size={12} />}
-            {showPw ? "Hide" : "Show"} passwords
+            Update Password
           </button>
         </div>
-        <button
-          onClick={handleSavePassword}
-          className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl border border-[#e2e8f0] hover:bg-[#f8fafc] transition-colors font-medium"
-        >
-          <Save size={14} /> Update Password
-        </button>
-      </SectionCard>
-
-      {/* Demo: role switch */}
-      <SectionCard title="Demo: Switch Role" titleBn="ডেমো: ভূমিকা পরিবর্তন">
-        <p className="text-sm text-[#64748b] mb-4">
-          Toggle between Citizen and Admin Officer views to explore both dashboards. This is a demo feature — in production, roles are assigned by the platform administrator.
-        </p>
-        <div className="flex gap-2 flex-wrap">
-          {([["citizen", "Citizen", "#059669"], ["officer", "Govt. Officer", "#1d4ed8"], ["superadmin", "Super Admin", "#7c3aed"]] as [Role, string, string][]).map(([value, label, color]) => (
-            <button
-              key={value}
-              onClick={() => setRole(value)}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all duration-200"
-              style={{
-                background: role === value ? color : "#fff",
-                borderColor: role === value ? color : "#e2e8f0",
-                color: role === value ? "#fff" : "#64748b",
-              }}
-            >
-              {role === value && <Check size={13} />}
-              {label}
-            </button>
-          ))}
-        </div>
-        {role !== "citizen" && (
-          <p className="text-xs text-[#059669] mt-3">
-            {role === "officer" ? "Officer Workspace" : "Super Admin Panel"} is now visible in the sidebar navigation.
-          </p>
-        )}
       </SectionCard>
     </div>
   );

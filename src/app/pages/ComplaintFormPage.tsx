@@ -1,54 +1,116 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Upload, Check, ArrowRight, ArrowLeft, MapPin, ChevronDown } from "lucide-react";
+import {
+  Upload,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  MapPin,
+  ChevronDown,
+  Sparkles,
+  AlertCircle,
+  X,
+  FileText,
+  ShieldCheck,
+} from "lucide-react";
 import { toast } from "sonner";
+import { useData } from "../components/DataContext";
+import { useAuth } from "../components/AuthContext";
+import { UPAZILAS_BY_DISTRICT, type ComplaintPriority } from "../data/mockData";
 
 const CATEGORIES = [
-  "Roads & Infrastructure", "Waste Management", "Electricity & Lighting",
-  "Water Supply", "Drainage & Waterlogging", "Environment & Noise",
-  "Public Transport", "Parks & Recreation", "Government Office",
+  "Roads & Infrastructure",
+  "Waste Management",
+  "Electricity & Lighting",
+  "Water Supply",
+  "Drainage & Waterlogging",
+  "Environment & Noise",
+  "Public Transport",
+  "Parks & Recreation",
+  "Government Office",
 ];
 
 const DISTRICTS = [
-  "Dhaka", "Chittagong", "Rajshahi", "Khulna", "Sylhet",
-  "Barisal", "Mymensingh", "Rangpur", "Comilla",
+  "Dhaka",
+  "Chittagong",
+  "Rajshahi",
+  "Khulna",
+  "Sylhet",
+  "Barisal",
+  "Mymensingh",
+  "Rangpur",
+  "Comilla",
+];
+
+const PRIORITIES: { key: ComplaintPriority; label: string; color: string; desc: string }[] = [
+  { key: "low", label: "Low", color: "#64748b", desc: "Minor aesthetic or non-urgent issue" },
+  { key: "medium", label: "Medium", color: "#1d4ed8", desc: "Standard civic issue affecting neighborhood" },
+  { key: "high", label: "High", color: "#d97706", desc: "Causes daily disruption to traffic or water" },
+  { key: "urgent", label: "Urgent", color: "#dc2626", desc: "Immediate public safety or hazard risk" },
 ];
 
 function StepIndicator({ step, total }: { step: number; total: number }) {
+  const stepTitles = ["Location & Category", "Issue Details & Photos", "Review & Submit"];
+
   return (
-    <div className="flex items-center gap-2 mb-8">
-      {Array.from({ length: total }, (_, i) => (
-        <div key={i} className="flex items-center gap-2">
-          <div className="flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold transition-all duration-300"
-            style={{
-              background: i < step ? "#059669" : i === step ? "#059669" : "#f1f5f9",
-              color: i <= step ? "#fff" : "#94a3b8",
-            }}>
-            {i < step ? <Check size={12} /> : i + 1}
+    <div className="mb-8">
+      <div className="flex items-center gap-2">
+        {Array.from({ length: total }, (_, i) => (
+          <div key={i} className="flex items-center gap-2">
+            <div
+              className="flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold transition-all duration-300 shadow-xs"
+              style={{
+                background: i < step ? "#059669" : i === step ? "#059669" : "#f1f5f9",
+                color: i <= step ? "#fff" : "#94a3b8",
+              }}
+            >
+              {i < step ? <Check size={14} /> : i + 1}
+            </div>
+            {i < total - 1 && (
+              <div
+                className="h-1 w-12 sm:w-20 rounded transition-colors duration-500"
+                style={{ background: i < step ? "#059669" : "#e2e8f0" }}
+              />
+            )}
           </div>
-          {i < total - 1 && (
-            <div className="h-0.5 w-12 rounded transition-colors duration-500"
-              style={{ background: i < step ? "#059669" : "#e2e8f0" }} />
-          )}
-        </div>
-      ))}
-      <div className="ml-3 text-xs text-[#64748b]">Step {step + 1} of {total}</div>
+        ))}
+      </div>
+      <div className="mt-2 text-xs font-semibold text-slate-700 dark:text-slate-300">
+        Step {step + 1}: <span className="text-emerald-600">{stepTitles[step]}</span>
+      </div>
     </div>
   );
 }
 
-function SelectField({ label, options, value, onChange }: {
-  label: string; options: string[]; value: string; onChange: (v: string) => void;
+function SelectField({
+  label,
+  options,
+  value,
+  onChange,
+  disabled = false,
+}: {
+  label: string;
+  options: string[];
+  value: string;
+  onChange: (v: string) => void;
+  disabled?: boolean;
 }) {
   return (
     <div className="relative">
-      <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-2">{label}</label>
+      <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-1.5">{label}</label>
       <div className="relative">
-        <select value={value} onChange={(e) => onChange(e.target.value)}
-          className="w-full appearance-none px-4 py-3 text-sm border border-[#e2e8f0] rounded-xl bg-white outline-none focus:border-[#059669] transition-colors cursor-pointer"
-          style={{ boxShadow: "none" }}>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          className="w-full appearance-none px-4 py-3 text-sm border border-[#e2e8f0] dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-[#059669] transition-colors cursor-pointer disabled:opacity-50"
+        >
           <option value="">Select {label.toLowerCase()}…</option>
-          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+          {options.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
         </select>
         <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-[#64748b] pointer-events-none" />
       </div>
@@ -58,100 +120,256 @@ function SelectField({ label, options, value, onChange }: {
 
 export function ComplaintFormPage() {
   const navigate = useNavigate();
+  const { addComplaint } = useData();
+  const { userName, userId } = useAuth();
+
   const [step, setStep] = useState(0);
   const [form, setForm] = useState({
-    category: "", district: "", location: "",
-    description: "", photos: [] as string[],
+    title: "",
+    category: "",
+    district: "",
+    upazila: "",
+    location: "",
+    priority: "medium" as ComplaintPriority,
+    description: "",
+    photos: [] as string[],
   });
   const [submitting, setSubmitting] = useState(false);
-  const set = (k: keyof typeof form) => (v: string) => setForm((f) => ({ ...f, [k]: v }));
+
+  const availableUpazilas = form.district ? UPAZILAS_BY_DISTRICT[form.district] || [] : [];
+
+  const set = (k: keyof typeof form) => (v: any) => {
+    if (k === "district") {
+      setForm((f) => ({ ...f, district: v, upazila: "" }));
+    } else {
+      setForm((f) => ({ ...f, [k]: v }));
+    }
+  };
 
   const handlePhotoAdd = () => {
     if (form.photos.length < 4) {
-      setForm((f) => ({ ...f, photos: [...f.photos, `photo-${Date.now()}`] }));
+      const mockLabels = ["Site photo - Day", "Pothole depth overview", "Water level close-up", "Warning sign area"];
+      const nextLabel = mockLabels[form.photos.length] || `Attachment #${form.photos.length + 1}`;
+      setForm((f) => ({ ...f, photos: [...f.photos, nextLabel] }));
+      toast.success("Photo attachment added.");
     }
+  };
+
+  const handlePhotoRemove = (index: number) => {
+    setForm((f) => ({ ...f, photos: f.photos.filter((_, i) => i !== index) }));
+  };
+
+  const handleAIEnhance = () => {
+    if (!form.description.trim()) {
+      toast.error("Please type a brief description first, then AI can enhance it.");
+      return;
+    }
+    const enhanced = `[MUNICIPAL REPORT]: Issue observed at ${form.location || "the designated location"}, ${form.district || "Dhaka"}.\n\nDETAILS: ${form.description.trim()}\n\nIMPACT: Severe inconvenience to resident commutes and public hygiene. Urgent inspection and allocation of maintenance contractor is requested.`;
+    setForm((f) => ({
+      ...f,
+      description: enhanced,
+      title: f.title || `${f.category || "Civic Hazard"} at ${f.location || f.district || "Area"}`,
+    }));
+    toast.success("Setu AI enhanced your complaint description!");
   };
 
   const handleSubmit = () => {
     setSubmitting(true);
+    const finalTitle = form.title.trim() || `${form.category} at ${form.location || form.district}`;
+
     setTimeout(() => {
-      toast.success("Complaint submitted successfully!", {
-        description: "Reference: BGD-2024-" + Math.floor(Math.random() * 1000 + 800),
+      const newId = addComplaint({
+        title: finalTitle,
+        category: form.category,
+        district: form.district,
+        upazila: form.upazila,
+        location: form.location,
+        priority: form.priority,
+        description: form.description,
+        photos: form.photos,
+        citizenId: userId,
+        citizenName: userName,
       });
-      navigate("/complaints");
-    }, 1200);
+
+      setSubmitting(false);
+      navigate(`/complaints/${newId}`);
+    }, 900);
   };
 
   const canNext = [
-    form.category && form.district && form.location,
-    form.description.length >= 20,
+    form.category && form.district && form.location.trim(),
+    form.description.trim().length >= 15,
     true,
   ][step];
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-xl font-bold text-[#0f172a]">File a Complaint</h1>
-        <p className="text-sm text-[#64748b]" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>অভিযোগ দাখিল করুন</p>
+    <div className="p-6 max-w-3xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-[#0f172a] dark:text-white">File an Official Civic Complaint</h1>
+        <p className="text-sm text-[#64748b]" style={{ fontFamily: "'Noto Sans Bengali', sans-serif" }}>
+          পৌর কর্তৃপক্ষ ও সিটি কর্পোরেশনে সমস্যা দাখিল করুন
+        </p>
       </div>
 
-      <div className="bg-white border border-[#e2e8f0] rounded-2xl p-6 shadow-sm">
+      <div className="bg-white dark:bg-slate-900 border border-[#e2e8f0] dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm">
         <StepIndicator step={step} total={3} />
 
-        {/* Step 0: Category & Location */}
+        {/* ════ STEP 0: Category & Location ════ */}
         {step === 0 && (
           <div className="space-y-5">
             <div>
-              <h2 className="font-semibold mb-1">Category & Location</h2>
-              <p className="text-xs text-[#64748b] mb-5">Select what type of issue you are reporting and where it is.</p>
+              <h2 className="font-bold text-base text-slate-900 dark:text-white">Location & Category Classification</h2>
+              <p className="text-xs text-[#64748b] mt-0.5">
+                Select the government department category and exact geographical location for fast routing.
+              </p>
             </div>
-            <SelectField label="Category" options={CATEGORIES} value={form.category} onChange={set("category")} />
-            <SelectField label="District" options={DISTRICTS} value={form.district} onChange={set("district")} />
+
+            <SelectField
+              label="Department Category *"
+              options={CATEGORIES}
+              value={form.category}
+              onChange={set("category")}
+            />
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <SelectField label="District *" options={DISTRICTS} value={form.district} onChange={set("district")} />
+              <SelectField
+                label="Upazila / Thana"
+                options={availableUpazilas}
+                value={form.upazila}
+                onChange={set("upazila")}
+                disabled={!form.district}
+              />
+            </div>
+
             <div>
-              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-2">Specific Location</label>
+              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-1.5">
+                Specific Landmark / Street Address *
+              </label>
               <div className="relative">
-                <MapPin size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b]" />
-                <input value={form.location} onChange={(e) => set("location")(e.target.value)}
-                  placeholder="e.g. Mirpur-10 Roundabout, near the metro station"
-                  className="w-full pl-10 pr-4 py-3 text-sm border border-[#e2e8f0] rounded-xl outline-none focus:border-[#059669] transition-colors" />
+                <MapPin size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#64748b]" />
+                <input
+                  value={form.location}
+                  onChange={(e) => set("location")(e.target.value)}
+                  placeholder="e.g. Mirpur-10 Roundabout, near Metro Pillar #42"
+                  className="w-full pl-11 pr-4 py-3 text-sm border border-[#e2e8f0] dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-[#059669] transition-colors"
+                />
+              </div>
+            </div>
+
+            {/* Priority Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-2">
+                Severity / Urgency Level
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                {PRIORITIES.map((p) => (
+                  <button
+                    key={p.key}
+                    type="button"
+                    onClick={() => set("priority")(p.key)}
+                    className="p-3 rounded-2xl border text-left transition-all"
+                    style={{
+                      borderColor: form.priority === p.key ? p.color : "#e2e8f0",
+                      background: form.priority === p.key ? `${p.color}10` : "transparent",
+                    }}
+                  >
+                    <div className="text-xs font-bold" style={{ color: p.color }}>
+                      {p.label}
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5 leading-tight line-clamp-2">{p.desc}</div>
+                  </button>
+                ))}
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 1: Description & Photos */}
+        {/* ════ STEP 1: Title, Description & Photos ════ */}
         {step === 1 && (
           <div className="space-y-5">
             <div>
-              <h2 className="font-semibold mb-1">Describe the Issue</h2>
-              <p className="text-xs text-[#64748b] mb-5">Provide as much detail as possible to help the officer understand and resolve it quickly.</p>
+              <h2 className="font-bold text-base text-slate-900 dark:text-white">Describe the Civic Issue</h2>
+              <p className="text-xs text-[#64748b] mt-0.5">
+                Provide clear specifics to assist field inspectors in scheduling equipment and work orders.
+              </p>
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-2">Description</label>
-              <textarea value={form.description} onChange={(e) => set("description")(e.target.value)}
-                placeholder="Describe the issue in detail. What is it? How long has it been there? What impact is it having on the community?"
+              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-1.5">
+                Subject / Title (Optional)
+              </label>
+              <input
+                value={form.title}
+                onChange={(e) => set("title")(e.target.value)}
+                placeholder="e.g. Deep crater pothole causing vehicle breakdown"
+                className="w-full px-4 py-2.5 text-sm border border-[#e2e8f0] dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-[#059669] transition-colors"
+              />
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-[#64748b] uppercase tracking-widest">
+                  Detailed Description *
+                </label>
+                <button
+                  type="button"
+                  onClick={handleAIEnhance}
+                  className="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 dark:bg-emerald-950/40 px-2.5 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 transition-colors"
+                >
+                  <Sparkles size={13} />
+                  Enhance with Setu AI
+                </button>
+              </div>
+
+              <textarea
+                value={form.description}
+                onChange={(e) => set("description")(e.target.value)}
+                placeholder="Explain the problem in detail. How long has it persisted? How is it impacting school children, traffic, safety, or health?"
                 rows={5}
-                className="w-full px-4 py-3 text-sm border border-[#e2e8f0] rounded-xl outline-none focus:border-[#059669] transition-colors resize-none" />
-              <div className="text-xs text-right mt-1" style={{ color: form.description.length >= 20 ? "#059669" : "#94a3b8" }}>
-                {form.description.length} characters {form.description.length < 20 && "(minimum 20)"}
+                className="w-full px-4 py-3 text-sm border border-[#e2e8f0] dark:border-slate-800 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 outline-none focus:border-[#059669] transition-colors resize-none leading-relaxed"
+              />
+              <div
+                className="text-xs text-right mt-1"
+                style={{ color: form.description.length >= 15 ? "#059669" : "#94a3b8" }}
+              >
+                {form.description.length} characters {form.description.length < 15 && "(minimum 15)"}
               </div>
             </div>
+
+            {/* Photo Upload Section */}
             <div>
-              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-2">
-                Photos <span className="text-[#94a3b8] font-normal normal-case">(optional, max 4)</span>
+              <label className="block text-xs font-semibold text-[#64748b] uppercase tracking-widest mb-1.5">
+                Photo Evidence Attachments (Max 4)
               </label>
-              <div className="grid grid-cols-4 gap-3">
-                {form.photos.map((p, i) => (
-                  <div key={p} className="aspect-square rounded-xl bg-[#ecfdf5] border border-[#a7f3d0] flex flex-col items-center justify-center text-[#059669] text-xs font-medium">
-                    <div className="text-2xl mb-1">🖼️</div>
-                    <span>Photo {i + 1}</span>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {form.photos.map((photo, i) => (
+                  <div
+                    key={i}
+                    className="relative p-3 rounded-2xl border border-emerald-300 dark:border-emerald-700 bg-emerald-50/50 dark:bg-emerald-950/30 flex flex-col items-center justify-center text-center group"
+                  >
+                    <FileText size={22} className="text-emerald-600 mb-1" />
+                    <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 truncate w-full">
+                      {photo}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handlePhotoRemove(i)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white flex items-center justify-center shadow-sm hover:scale-110 transition-transform"
+                    >
+                      <X size={12} />
+                    </button>
                   </div>
                 ))}
+
                 {form.photos.length < 4 && (
-                  <button type="button" onClick={handlePhotoAdd}
-                    className="aspect-square rounded-xl border-2 border-dashed border-[#e2e8f0] flex flex-col items-center justify-center gap-1 hover:border-[#059669] hover:bg-[#f0fdf4] transition-all group">
-                    <Upload size={18} className="text-[#94a3b8] group-hover:text-[#059669] transition-colors" />
-                    <span className="text-xs text-[#94a3b8] group-hover:text-[#059669] transition-colors">Add photo</span>
+                  <button
+                    type="button"
+                    onClick={handlePhotoAdd}
+                    className="p-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-emerald-500 hover:bg-emerald-50/30 text-slate-400 hover:text-emerald-600 flex flex-col items-center justify-center gap-1.5 transition-all text-xs font-semibold"
+                  >
+                    <Upload size={18} />
+                    <span>Attach Photo</span>
                   </button>
                 )}
               </div>
@@ -159,56 +377,97 @@ export function ComplaintFormPage() {
           </div>
         )}
 
-        {/* Step 2: Review */}
+        {/* ════ STEP 2: Summary Review ════ */}
         {step === 2 && (
           <div className="space-y-5">
             <div>
-              <h2 className="font-semibold mb-1">Review & Submit</h2>
-              <p className="text-xs text-[#64748b] mb-5">Please verify your complaint details before submitting.</p>
+              <h2 className="font-bold text-base text-slate-900 dark:text-white">Review & Confirm Submission</h2>
+              <p className="text-xs text-[#64748b] mt-0.5">
+                Verify all case data before dispatching to the official municipal docket.
+              </p>
             </div>
-            <div className="border border-[#e2e8f0] rounded-xl overflow-hidden divide-y divide-[#f1f5f9]">
-              {[["Category", form.category], ["District", form.district], ["Location", form.location]].map(([k, v]) => (
-                <div key={k} className="px-4 py-3 flex justify-between text-sm">
-                  <span className="text-[#64748b]">{k}</span>
-                  <span className="font-medium text-right max-w-xs">{v}</span>
-                </div>
-              ))}
-              <div className="px-4 py-3 text-sm">
-                <div className="text-[#64748b] mb-1">Description</div>
-                <div className="text-[#0f172a] leading-relaxed">{form.description}</div>
+
+            <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-3.5 text-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-700">
+                <span className="font-bold text-sm text-slate-900 dark:text-white">
+                  {form.title || `${form.category} at ${form.location}`}
+                </span>
+                <span className="px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider text-[10px] bg-amber-100 text-amber-800">
+                  {form.priority} Priority
+                </span>
               </div>
-              {form.photos.length > 0 && (
-                <div className="px-4 py-3 text-sm">
-                  <span className="text-[#64748b]">Photos</span>
-                  <span className="font-medium ml-4">{form.photos.length} attached</span>
+
+              <div className="grid sm:grid-cols-2 gap-2 text-slate-600 dark:text-slate-300">
+                <div>
+                  <strong className="text-slate-900 dark:text-white">Category:</strong> {form.category}
                 </div>
-              )}
+                <div>
+                  <strong className="text-slate-900 dark:text-white">Location:</strong> {form.location},{" "}
+                  {form.upazila ? `${form.upazila}, ` : ""}
+                  {form.district}
+                </div>
+                <div>
+                  <strong className="text-slate-900 dark:text-white">Citizen Name:</strong> {userName}
+                </div>
+                <div>
+                  <strong className="text-slate-900 dark:text-white">Attachments:</strong> {form.photos.length} photos
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                <strong className="block text-slate-900 dark:text-white mb-1">Description:</strong>
+                <p className="text-slate-700 dark:text-slate-300 whitespace-pre-line leading-relaxed">
+                  {form.description}
+                </p>
+              </div>
             </div>
-            <div className="bg-[#f0fdf4] border border-[#a7f3d0] rounded-xl px-4 py-3 text-xs text-[#059669] leading-relaxed">
-              By submitting, your complaint will be assigned to the relevant authority. You will receive updates via notifications and can track progress on your dashboard.
+
+            <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-800 dark:text-emerald-200">
+              <ShieldCheck size={18} className="flex-shrink-0" />
+              <span>
+                Filing this complaint awards <strong>+50 Civic Points</strong> toward your next citizen rank badge!
+              </span>
             </div>
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between mt-8 pt-6 border-t border-[#f1f5f9]">
-          <button onClick={() => step > 0 ? setStep((s) => s - 1) : navigate("/complaints")}
-            className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl border border-[#e2e8f0] hover:bg-[#f8fafc] transition-colors text-[#64748b]">
-            <ArrowLeft size={15} />{step === 0 ? "Cancel" : "Back"}
-          </button>
-          {step < 2 ? (
-            <button onClick={() => setStep((s) => s + 1)} disabled={!canNext}
-              className="flex items-center gap-2 text-sm px-5 py-2.5 rounded-xl text-white font-semibold bg-[#059669] hover:bg-[#047857] transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
-              Continue <ArrowRight size={15} />
+        {/* ════ FOOTER BUTTONS ════ */}
+        <div className="flex items-center justify-between pt-6 mt-6 border-t border-slate-100 dark:border-slate-800">
+          {step > 0 ? (
+            <button
+              type="button"
+              onClick={() => setStep((s) => s - 1)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 transition-colors"
+            >
+              <ArrowLeft size={14} /> Back
             </button>
           ) : (
-            <button onClick={handleSubmit} disabled={submitting}
-              className="flex items-center gap-2 text-sm px-6 py-2.5 rounded-xl text-white font-semibold bg-[#059669] hover:bg-[#047857] transition-colors disabled:opacity-70">
-              {submitting ? (
-                <><span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />Submitting…</>
-              ) : (
-                <>Submit Complaint <ArrowRight size={15} /></>
-              )}
+            <button
+              type="button"
+              onClick={() => navigate("/complaints")}
+              className="text-xs text-slate-500 hover:text-slate-800 transition-colors"
+            >
+              Cancel
+            </button>
+          )}
+
+          {step < 2 ? (
+            <button
+              type="button"
+              disabled={!canNext}
+              onClick={() => setStep((s) => s + 1)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#059669] hover:bg-[#047857] disabled:opacity-40 text-white text-xs font-bold transition-all shadow-sm"
+            >
+              Continue <ArrowRight size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={handleSubmit}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#059669] hover:bg-[#047857] disabled:opacity-50 text-white text-xs font-bold transition-all shadow-md"
+            >
+              {submitting ? "Registering Complaint..." : "Submit Complaint 🚀"}
             </button>
           )}
         </div>
